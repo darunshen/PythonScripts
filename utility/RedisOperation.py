@@ -22,7 +22,7 @@ class RedisOperation:
         '''
         pubsub_op = self.redis_op.pubsub()
         self.redis_op.config_set('notify-keyspace-events', config_str)
-        pubsub_op.subscribe(**{psub_str: event_handle})
+        pubsub_op.psubscribe(**{psub_str: event_handle})
         if if_threaded:
             pubsub_op.run_in_thread(sleep_time=sleep_time)
         else:
@@ -43,6 +43,42 @@ class RedisOperation:
             for item in data:
                 self.redis_op.hset(
                     item['hash_field'], item['key'], item['value'])
-                self.redis_op.expire(item['hash_field'], expired_time)
+                if expired_time > 0:
+                    self.redis_op.expire(item['hash_field'], expired_time)
         except Exception as e:
             print('error when add redis entry:', e)
+
+    def Increase(self, data):
+        '''
+        执行INCR指令
+        data样式:[
+            {'key':'1',
+             'value':'11',
+             'expire_time':5},
+             ....
+        ]
+        '''
+        try:
+            for item in data:
+                self.redis_op.incr(item['key'])
+                if item.get('expire_time'):
+                    self.redis_op.expire(item['key'], item['expire_time'])
+        except Exception as e:
+            print('error when add redis entry:', e)
+
+    def GetData(self, data):
+        '''
+        执行GET指令
+        data样式:[
+            {'key':'1'},
+             ....
+        ]
+        '''
+        result = []
+        try:
+            for item in data:
+                result.append(self.redis_op.get(item['key']))
+        except Exception as e:
+            print('error when add redis entry:', e)
+        finally:
+            return result
