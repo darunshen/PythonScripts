@@ -16,9 +16,9 @@ def KeyEventHandle(message):
 
 
 if __name__ == '__main__':
-    redis_op.ConnectDB(host=host_ip, port=host_port)
-    redis_op.KeyEventInit(keyspace_config, psub_str,
-                          KeyEventHandle, if_threaded=True)
+    redis_op.ConnectDB(host=host_ip, port=host_port, db=1)
+    redis_op.KeyEventInit(
+        keyspace_config, {psub_str: KeyEventHandle}, if_threaded=True)
     # redis_op.AddHash([{'key': '1',
     #                    'value': '11',
     #                    'hash_field': 'redis'},
@@ -40,12 +40,12 @@ if __name__ == '__main__':
     #                    'value': '11',
     #                    'hash_field': 'redis'}, ], -1)
     result = []
-    redis_op.Increase([{'key': '1',
+    redis_op.Increase([{'key': 'test11',
                         'value': '11',
                         'expire_time': 5}])
     result.append(redis_op.GetData([{'key': '1'}]))
     time.sleep(6)
-    redis_op.Increase([{'key': '1',
+    redis_op.Increase([{'key': 'test22',
                         'value': '11',
                         'expire_time': 5}])
     result.append(redis_op.GetData([{'key': '1'}]))

@@ -7,7 +7,7 @@ import yaml
 import os
 
 
-class FileOperations:
+class FileOperation:
     def load_conf(self, path):
         '''
         加载path所指定的yaml文件并返回

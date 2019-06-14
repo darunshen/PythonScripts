@@ -8,7 +8,7 @@ import random
 import json
 
 
-class MqttOperations:
+class MqttOperation:
     action_map = {}         # 存储所有action与其对应处理函数的映射关系
     subscribe_topics = []   # 存储所有要订阅的topic
     client = {}             # 存储mqtt client

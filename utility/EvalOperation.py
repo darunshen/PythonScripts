@@ -5,7 +5,7 @@
 import logging
 
 
-class EvalOperations:
+class EvalOperation:
     scope = {}
 
     def add_to_scope(self, key, value):
