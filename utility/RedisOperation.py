@@ -1,8 +1,11 @@
+'''
+提供redis操作所需的工具
+'''
 import redis
 import traceback
 
 
-class RedisOperations:
+class RedisOperation:
     redis_op = {}
 
     def ConnectDB(self, password=None, host="127.0.0.1", port=6379, db=0):
@@ -20,9 +23,23 @@ class RedisOperations:
         sleep_time: 消息轮询时间间隔，单位是秒
         psub_event_handle_map: 键事件通知订阅的主题 与 键事件处理函数的映射，是字典
         '''
-        pubsub_op = self.redis_op.pubsub()
+
         self.redis_op.config_set('notify-keyspace-events', config_str)
-        pubsub_op.psubscribe(**psub_event_handle_map)
+        self.POrSubscript(True, psub_event_handle_map, if_threaded, sleep_time)
+
+    def POrSubscript(self, if_psubscript, psub_event_handle_map, if_threaded=False, sleep_time=0.5):
+        '''
+        执行订阅键或模式
+        if_psubscript: 订阅的是否为模式
+        if_threaded: 消息轮询是否单独线程
+        sleep_time: 消息轮询时间间隔，单位是秒
+        psub_event_handle_map: 键事件通知订阅的主题 与 键事件处理函数的映射，是字典
+        '''
+        pubsub_op = self.redis_op.pubsub()
+        if if_psubscript == True:
+            pubsub_op.psubscribe(**psub_event_handle_map)
+        else:
+            pubsub_op.subscribe(**psub_event_handle_map)
         if if_threaded:
             pubsub_op.run_in_thread(sleep_time=sleep_time)
         else:
@@ -51,17 +68,17 @@ class RedisOperations:
 
     def Increase(self, data):
         '''
-        执行INCR指令
+        执行INCRBY指令
         data样式:[
             {'key':'1',
-             'value':'11',
+             'value':1,
              'expire_time':5},
              ....
         ]
         '''
         try:
             for item in data:
-                self.redis_op.incr(item['key'])
+                self.redis_op.incrby(item['key'], item['value'])
                 if item.get('expire_time'):
                     self.redis_op.expire(item['key'], item['expire_time'])
         except Exception as e:
@@ -88,7 +105,7 @@ class RedisOperations:
 
     def SetData(self, data):
         '''
-        执行GET指令
+        执行SET指令
         data样式:[
             {'key':'1','value':'test'},
              ....
@@ -102,6 +119,9 @@ class RedisOperations:
             traceback.print_exc()
 
     def GetKeys(self, key_pattern):
+        '''
+        执行KEYS指令，获取key_pattern的所有键
+        '''
         try:
             return self.redis_op.keys(key_pattern)
         except Exception as e:
@@ -117,3 +137,12 @@ class RedisOperations:
             self.redis_op.flushall()
         else:
             self.redis_op.flushdb()
+
+    def PublishData(self, channel, message):
+        '''
+        执行PUBLISH指令
+        channel : 主题
+        message : 消息
+        '''
+
+        self.redis_op.publish(channel, message)

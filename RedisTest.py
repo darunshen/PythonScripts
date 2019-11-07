@@ -8,6 +8,9 @@ host_ip = '127.0.0.1'
 keyspace_config = str('KEA')
 # keyspace_config = str('Ex')
 psub_str = str('__key*__:*')
+test_sub_str = str('test1')
+test_psub_str = str('test*')
+
 # psub_str = str('__keyevent@0__:expired')
 
 
@@ -15,10 +18,26 @@ def KeyEventHandle(message):
     print('event handle called : ', message)
 
 
+def SubscriptCallBack(message):
+    '''
+    '''
+    print("Subscript CallBack : ", message)
+
+
+def PsubscriptCallBack(message):
+    '''
+    '''
+    print("Psubscript CallBack : ", message)
+
+
 if __name__ == '__main__':
     redis_op.ConnectDB(host=host_ip, port=host_port, db=1)
     redis_op.KeyEventInit(
         keyspace_config, {psub_str: KeyEventHandle}, if_threaded=True)
+    redis_op.POrSubscript(
+        False, {test_sub_str: SubscriptCallBack}, if_threaded=True)
+    redis_op.POrSubscript(
+        True, {test_psub_str: PsubscriptCallBack}, if_threaded=True)
     # redis_op.AddHash([{'key': '1',
     #                    'value': '11',
     #                    'hash_field': 'redis'},
@@ -49,6 +68,7 @@ if __name__ == '__main__':
                         'value': '11',
                         'expire_time': 5}])
     result.append(redis_op.GetData([{'key': '1'}]))
+    redis_op.PublishData(test_sub_str, 'lalala')
     print(result)
     print('data init done')
 

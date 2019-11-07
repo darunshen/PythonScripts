@@ -1,31 +1,69 @@
+'''
+提供串口通信所需的工具
+'''
 import serial
-import serial.threaded.ReaderThread
-import serial.threaded.LineReader
-import threading
+from serial.threaded import LineReader, ReaderThread
 import sys
 
 
 class SerialOperation:
-    thread_read = None
-    tty_serial_map = {}
+    transport = None
+    protocol = {}
+    reader_thread = None
+    ser = {}
 
-    def InitSerial(self, port, baudrate=115200):
-        ser = serial.Serial()
-        ser.port = port
-        ser.baudrate = baudrate
-        ser.timeout = 2
-        ser.open()
-        if ser.isOpen():
-            self.tty_serial_map[port] = ser
+    def InitSerial(self, port, Policy, baudrate=115200, if_use_thread=True):
+        '''
+        初始化生成一个串口通信的实例
+        port:串口名称 ，如'/dev/ttyUSB0'
+        Policy:重载串口通信相关接口的类，而非实例
+        baudrate:串口通信波特率
+        '''
+        self.ser = serial.Serial()
+        self.ser.port = port
+        self.ser.baudrate = baudrate
+        self.ser.stopbits = 1
+        self.ser.open()
+        if self.ser.isOpen():
+            if if_use_thread:
+                self.reader_thread = ReaderThread(self.ser, Policy)
+                self.reader_thread.start()
+                self.transport, self.protocol = self.reader_thread.connect()
             return True
         else:
             return False
 
+    def GetProtocol(self):
+        '''
+        返回通信的实例
+        '''
+        return self.protocol
+
+    def StopSerial(self):
+        '''
+        关闭串口
+        '''
+        self.reader_thread.close()
+
+    def GetReaderThread(self):
+        '''
+        返回串口读取线程
+        '''
+        return self.reader_thread
+
+    def GetSerial(self):
+        '''
+        返回串口句柄
+        '''
+        return self.ser
+
 
 if __name__ == '__main__':
+    import traceback
+
     class SerialLineProcess(LineReader):
         def connection_made(self, transport):
-            super(PrintLines, self).connection_made(transport)
+            super(SerialLineProcess, self).connection_made(transport)
             sys.stdout.write('port opened\n')
 
         def handle_line(self, data):
@@ -37,6 +75,15 @@ if __name__ == '__main__':
             sys.stdout.write('port closed\n')
 
         # ser = serial.serial_for_url('loop://', baudrate=115200, timeout=1)
-        # with ReaderThread(ser, PrintLines) as protocol:
+        # with ReaderThread(ser, SerialLineProcess) as protocol:
         #     protocol.write_line('hello')
         #     time.sleep(2)
+    # ser = serial.Serial(port='/dev/ttyUSB0', baudrate=115200, timeout=1)
+    # t = ReaderThread(ser, SerialLineProcess)
+    # t.start()
+    # transport, protocol = t.connect()
+    # protocol.write_line('hello')
+    # time.sleep(2)
+    # t.close()
+    test_exa = SerialOperation()
+    test_exa.InitSerial('/dev/ttyUSB0', SerialLineProcess)
