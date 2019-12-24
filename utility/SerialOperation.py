@@ -4,6 +4,8 @@
 import serial
 from serial.threaded import LineReader, ReaderThread
 import sys
+import struct
+import crcmod.predefined
 
 
 class SerialOperation:
@@ -19,7 +21,7 @@ class SerialOperation:
         Policy:重载串口通信相关接口的类，而非实例
         baudrate:串口通信波特率
         '''
-        self.ser = serial.Serial()
+        self.ser = serial.Serial(timeout=1)
         self.ser.port = port
         self.ser.baudrate = baudrate
         self.ser.stopbits = 1
@@ -56,6 +58,13 @@ class SerialOperation:
         返回串口句柄
         '''
         return self.ser
+
+    def GetAppendedCrc16Modbus(self, bytes_data):
+        '''
+        获取追加了crc16 modbus校验码的数据
+        '''
+        crcmodbus = crcmod.predefined.mkCrcFun('modbus')
+        return bytes_data+(struct.pack('i', crcmodbus(bytes_data))[0:2])
 
 
 if __name__ == '__main__':
